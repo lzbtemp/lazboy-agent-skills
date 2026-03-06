@@ -1,0 +1,106 @@
+# La-Z-Boy Agent Skills
+
+The official repository for La-Z-Boy's AI agent skill library. This repo contains reusable skills for Claude Code, Cursor, and other AI coding agents used across the organization.
+
+🌐 **Skill Portal:** [lazboy-agent-skills portal URL] — Browse, preview, and install skills without touching this repo.
+
+---
+
+## What is a Skill?
+
+A skill is a structured knowledge file that tells an AI agent how to handle a specific domain — brand guidelines, code patterns, API conventions, design systems, and more. Instead of re-explaining the same rules every time, you install a skill once and your agent applies it automatically.
+
+---
+
+## Quick Install
+
+### Prerequisites
+- [Claude Code](https://docs.anthropic.com/en/docs/claude-code) installed
+- Git (for cloning the repo)
+
+### One-time setup
+```bash
+git clone https://github.com/lazboy/lazboy-agent-skills.git
+cd lazboy-agent-skills
+```
+
+### Install a skill globally (your machine, all projects)
+```bash
+./install.sh lazboy-brand --global
+```
+
+### Install a skill into a specific project
+```bash
+./install.sh lazboy-brand --project /path/to/your/project
+```
+
+### Install all skills globally
+```bash
+./install.sh --all --global
+```
+
+### Install for Cursor
+```bash
+./install.sh lazboy-brand --cursor --project /path/to/your/project
+```
+
+---
+
+## Available Skills
+
+| Skill | Description | Version |
+|-------|-------------|---------|
+| [`lazboy-brand`](./skills/lazboy-brand/) | Brand colors, fonts, logo usage for all agent outputs | 2.0 |
+| [`lazboy-skill-standard`](./skills/lazboy-skill-standard/) | Org standard for creating and maintaining skills | 1.0 |
+
+> See the [Skill Portal] for a full browsable catalog with previews.
+
+---
+
+## Repo Structure
+
+```
+lazboy-agent-skills/
+├── skills/                    # All org skills live here
+│   ├── lazboy-brand/          # Each skill follows the standard structure
+│   └── lazboy-skill-standard/
+├── install.sh                 # CLI installer for Claude Code + Cursor
+├── docs/
+│   ├── contributing.md        # How to add a new skill
+│   └── skill-anatomy.md       # Reference: what each folder does
+├── .github/
+│   └── ISSUE_TEMPLATE/        # Templates for skill requests + bug reports
+└── README.md
+```
+
+---
+
+## Contributing a New Skill
+
+1. **Read the standard first:** [`skills/lazboy-skill-standard/SKILL.md`](./skills/lazboy-skill-standard/SKILL.md)
+2. **Copy the template:** `cp -r skills/lazboy-skill-standard/assets/skill-template skills/your-skill-name`
+3. **Build your skill** following the org standard
+4. **Run the quality checklist** in `lazboy-skill-standard`
+5. **Submit a PR** — fill out the skill submission template
+6. **Get reviewed** by the skill owner for your domain
+
+Full guide: [`docs/contributing.md`](./docs/contributing.md)
+
+---
+
+## Install Paths Reference
+
+| Tool | Scope | Path |
+|------|-------|------|
+| Claude Code | Global | `~/.claude/skills/<skill-name>/` |
+| Claude Code | Per-project | `<project>/.claude/skills/<skill-name>/` |
+| Cursor | Per-project | `<project>/.cursor/rules/<skill-name>.mdc` |
+
+---
+
+## Questions?
+
+- **Skill portal:** [URL]
+- **Slack:** `#ai-agent-skills`
+- **Submit a skill request:** [GitHub Issues](../../issues/new?template=skill-request.md)
+- **Report a problem:** [GitHub Issues](../../issues/new?template=bug-report.md)
