@@ -1,0 +1,30 @@
+{
+  "name": "@lzbtemp/skills",
+  "version": "1.0.0",
+  "description": "La-Z-Boy Agent Skills CLI — install and manage AI agent skills for Claude Code and Cursor",
+  "main": "index.js",
+  "bin": {
+    "lazboy-skills": "./index.js"
+  },
+  "scripts": {
+    "test": "node index.js list"
+  },
+  "keywords": ["lazboy", "skills", "claude", "cursor", "ai-agents"],
+  "author": "La-Z-Boy Engineering",
+  "license": "UNLICENSED",
+  "private": false,
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lzbtemp/lazboy-agent-skills.git",
+    "directory": "cli"
+  },
+  "dependencies": {
+    "https-proxy-agent": "^7.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
