@@ -1,21 +1,53 @@
 # La-Z-Boy Logo Asset Reference
 
 All logo files must be sourced from: https://brandguidelines.la-z-boy.com/
+Primary logo page: https://brandguidelines.la-z-boy.com/89f81758c/p/73dcba-primary-logo
 Contact La-Z-Boy Marketing for access credentials or asset requests.
 
 ---
 
 ## Table of Contents
-1. [Approved Logo Variants](#1-approved-logo-variants)
-2. [Tagline Rules](#2-tagline-rules)
-3. [Clearspace & Sizing](#3-clearspace--sizing)
-4. [Placement Rules](#4-placement-rules)
-5. [File Formats](#5-file-formats)
-6. [Logo Don'ts](#6-logo-donts)
+1. [How to Get the Logo](#1-how-to-get-the-logo)
+2. [Approved Logo Variants](#2-approved-logo-variants)
+3. [Tagline Rules](#3-tagline-rules)
+4. [Clearspace & Sizing](#4-clearspace--sizing)
+5. [Placement Rules](#5-placement-rules)
+6. [File Formats](#6-file-formats)
+7. [Logo Don'ts](#7-logo-donts)
 
 ---
 
-## 1. Approved Logo Variants
+## 1. How to Get the Logo
+
+**IMPORTANT:** Never recreate the logo as SVG text, CSS, or code. Always download the official asset.
+
+**Primary logo (Navy/Comfort Blue) — direct CDN URL:**
+```
+https://cdn.zeroheight.com/styleguide_logos/131371-default/f9321cebdcd8f9443e8e5a42_LaZboy_2024_Logo_Navy_PMS2189_RGB.png
+```
+> Note: This URL requires a signed policy token. Visit https://brandguidelines.la-z-boy.com/89f81758c/p/73dcba-primary-logo in a browser to get the current signed URL, then download using `curl`.
+
+**Steps to download the logo for a project:**
+1. Open https://brandguidelines.la-z-boy.com/89f81758c/p/73dcba-primary-logo in a browser
+2. The page loads the logo with a time-limited signed URL from the CDN
+3. Right-click the logo → Save Image As → save as `lazboy-logo.png`
+4. Place the file in your project's public/static assets directory (e.g., `public/lazboy-logo.png`)
+5. Reference it via `<img src="/lazboy-logo.png" alt="La-Z-Boy" />`
+
+**For white/reversed logo on dark backgrounds:**
+Use CSS `brightness-0 invert` (or Tailwind `brightness-0 invert`) on the Navy logo PNG:
+```html
+<img src="/lazboy-logo.png" alt="La-Z-Boy" class="brightness-0 invert" />
+```
+
+**For reduced emphasis (e.g., footer):**
+```html
+<img src="/lazboy-logo.png" alt="La-Z-Boy" class="brightness-0 invert opacity-40" />
+```
+
+---
+
+## 2. Approved Logo Variants
 
 | Variant                  | When to use                                          |
 |--------------------------|------------------------------------------------------|
@@ -40,7 +72,7 @@ Never create your own variant. Always use an approved file from the brand portal
 
 ---
 
-## 3. Clearspace & Sizing
+## 4. Clearspace & Sizing
 
 **Clearspace:** Maintain clearspace equal to the height of the capital "L" in the wordmark on all four sides. No other graphic elements, text, or imagery may appear within this zone.
 
@@ -51,7 +83,7 @@ Never create your own variant. Always use an approved file from the brand portal
 
 ---
 
-## 4. Placement Rules
+## 5. Placement Rules
 
 - Place on backgrounds with sufficient contrast (see colors.md for contrast ratios)
 - Do not place on busy photographic backgrounds without a clear/solid color bar behind the logo
@@ -60,7 +92,7 @@ Never create your own variant. Always use an approved file from the brand portal
 
 ---
 
-## 5. File Formats
+## 6. File Formats
 
 Request these formats from Marketing depending on your use case:
 
@@ -76,7 +108,7 @@ Never export or save your own version of the logo from a document. Always use th
 
 ---
 
-## 6. Logo Don'ts
+## 7. Logo Don'ts
 
 1. ❌ Do not recolor outside approved variants
 2. ❌ Do not add drop shadows, glows, gradients, or any effects
