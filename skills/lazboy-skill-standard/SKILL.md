@@ -1,11 +1,6 @@
 ---
 name: lazboy-skill-standard
-description: >
-  The La-Z-Boy organization standard for creating, structuring, and maintaining agent skills.
-  Use this skill whenever creating a new skill, reviewing an existing skill, onboarding a new
-  skill author, or auditing the skill library for consistency. Trigger on: "create a skill",
-  "new skill", "skill template", "skill standard", "how do I write a skill", "skill review",
-  "update a skill", or any time someone is building agent capabilities for La-Z-Boy.
+description: "The La-Z-Boy organization standard for creating, structuring, and maintaining agent skills. Use this skill whenever creating a new skill, reviewing an existing skill, onboarding a new skill author, or auditing the skill library for consistency — even if the user doesn't explicitly say 'skill'. Trigger on: create a skill, new skill, skill template, skill standard, how do I write a skill, skill review, update a skill, add to the skill library, or any time someone is building, improving, or evaluating agent capabilities for La-Z-Boy."
 ---
 
 # La-Z-Boy Agent Skill Standard
@@ -203,8 +198,10 @@ Draft → Review → Publish → Maintain → Deprecate
 
 | Skill | Purpose | Owner |
 |-------|---------|-------|
-| `lazboy-brand` | Brand colors, fonts, logo usage | Marketing / Design |
-| *(add yours here)* | | |
+| `lazboy-brand` | Brand colors, fonts, logo usage for all agent outputs | Marketing / Design |
+| `lazboy-skill-standard` | Org standard for creating and maintaining skills | Engineering |
+| `lazboy-python-best-practices` | Python 3.12+ coding standards, tooling, testing patterns | Engineering |
+| `lazboy-playwright` | Playwright E2E test writing, POM patterns, CI/CD setup | Engineering / QA |
 
 > Read `references/skill-registry.md` for the full registry with install paths and update history.
 
