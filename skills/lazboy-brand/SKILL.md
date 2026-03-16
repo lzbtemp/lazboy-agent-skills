@@ -21,6 +21,7 @@ Always apply this skill before producing any visual or written deliverable for L
 - `scripts/generate_tokens.py` — output brand design tokens as CSS, JSON, or Tailwind config
 
 **Assets — use as base templates:**
+- `assets/logos/` — official logo files in multiple sizes (copy into your project)
 - `assets/brand-tokens.json` — design tokens ready for Tailwind / Figma / Style Dictionary
 - `assets/component-base.tsx` — React component with all brand variables pre-applied
 - `assets/email-template.html` — pre-styled HTML email base
@@ -38,9 +39,13 @@ The distinctive "L", "Z", and hyphens are signature elements and must never be a
 - Sentence case only — never ALL CAPS or altered wording
 
 **Logo usage rules**
-- **Never recreate the logo as SVG text, CSS, or code** — handcrafted reproductions always drift from the approved wordmark geometry, and code-generated logos create legal risk around trademark accuracy. Always download the official asset.
-- Download from: https://brandguidelines.la-z-boy.com/89f81758c/p/73dcba-primary-logo
-- Save as `lazboy-logo.png` in the project's public/static assets directory
+- **Never recreate the logo as SVG text, CSS, or code** — handcrafted reproductions always drift from the approved wordmark geometry, and code-generated logos create legal risk around trademark accuracy. Always use the bundled asset files.
+- **Copy from this skill's assets:** `assets/logos/` contains official logo PNGs in multiple sizes
+  - `lazboy-logo-navy.png` — full resolution (3168x1129), for print/high-DPI
+  - `lazboy-logo-navy-400w.png` — standard web header
+  - `lazboy-logo-navy-200w.png` — compact header, sidebar, footer
+  - `lazboy-logo-navy-80w.png` — small badges, favicon-sized
+- Copy the appropriate size into your project's `public/` or `static/` directory
 - Reference via `<img src="/lazboy-logo.png" alt="La-Z-Boy" />`
 - For white/reversed on dark backgrounds: add CSS `brightness-0 invert`
 - Use approved one-color variants (Comfort Blue or Black) when full color isn't available
@@ -242,6 +247,7 @@ It will flag: off-brand hex values, non-approved fonts, missing CSS variables.
 | Resource | Path | When to use |
 |----------|------|-------------|
 | Full color specs (Pantone, CMYK, WCAG) | `references/colors.md` | Print production, accessibility review |
+| Logo files (multiple sizes) | `assets/logos/` | Copy into your project's public directory |
 | Logo variants and file sourcing | `references/logo-assets.md` | Any time you need to place a logo |
 | Font licensing and web setup | `references/typography.md` | Setting up a new web project or doc template |
 | Design tokens (JSON) | `assets/brand-tokens.json` | Tailwind config, Figma, Style Dictionary |
