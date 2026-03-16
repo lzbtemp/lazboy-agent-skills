@@ -1,0 +1,319 @@
+---
+description: Apply La-Z-Boy brand standards whenever creating or reviewing UI, design, HTML, CSS, React components, email templates, presentations, or any visual output for La-Z-Boy. Enforces colors, typography, logo usage, design quality, and brand voice.
+globs: ["**/*.tsx", "**/*.jsx", "**/*.css", "**/*.html", "**/*.scss", "**/*.mdx", "**/*.pptx", "**/*.docx"]
+alwaysApply: false
+---
+
+# La-Z-Boy Brand Standards
+
+Apply these standards to all La-Z-Boy visual and written outputs. The brand identity is built around comfort, warmth, and crafted quality — every output should reflect that.
+
+---
+
+## 1. Color Palette
+
+### Primary (2025 Brand Refresh)
+
+| Name | HEX | Role |
+|---|---|---|
+| Comfort Blue | `#1B3A6B` | Logo, headings, hero bg, nav |
+| Burnt Vermilion | `#C0392B` | Accent, CTAs, dividers |
+| Soft Celadon | `#8FAF8A` | Secondary accent, calm themes |
+| Warm White | `#FAF8F5` | Page/slide backgrounds |
+| Charcoal | `#2C2C2C` | Body text, captions |
+
+### Legacy (still approved for existing materials only)
+
+| Name | HEX | Usage |
+|---|---|---|
+| La-Z-Boy Red | `#CC0000` | Older corporate materials only — do not use for new work |
+| White | `#FFFFFF` | Reversed text on dark bg |
+| Black | `#000000` | One-color logo, fine print |
+
+Default combination: **Comfort Blue + Warm White background + Burnt Vermilion accent.**
+
+### WCAG Accessibility
+
+- Comfort Blue `#1B3A6B` on Warm White `#FAF8F5` → **AAA** ✅
+- Charcoal `#2C2C2C` on Warm White `#FAF8F5` → **AAA** ✅
+- Burnt Vermilion `#C0392B` on Warm White `#FAF8F5` → **AA** ✅
+- Soft Celadon `#8FAF8A` on white → **FAIL** ❌ — never use for body text
+
+---
+
+## 2. Typography
+
+Primary: **Helvetica Neue** | Fallback: `'Helvetica Neue', Helvetica, Arial, sans-serif`
+
+| Use | Weight | Size |
+|---|---|---|
+| H1 Display | Bold 700 | `clamp(32px, 5vw, 48px)` |
+| H2 Heading | Bold 700 | `clamp(24px, 4vw, 32px)` |
+| H3 Subheading | Semi-Bold 600 | 20px |
+| Body copy | Regular 400 | 15px |
+| Caption | Regular 400 | 12px |
+
+H1/H2 color: Comfort Blue or Charcoal. H3/Body/Caption: Charcoal.
+
+### Expressiveness — maximize Helvetica Neue's range
+
+- **Hero headings**: `text-6xl lg:text-7xl tracking-tight leading-[0.95]` — editorial, not generic
+- **Weight contrast**: Bold (700) headings vs Light/Regular (300/400) body
+- **Letter-spacing**: `tracking-tight` for large display, `tracking-[0.15em] uppercase` for small labels
+- Use `clamp()` for fluid responsive scaling
+
+### Legacy: Whitney (older corporate docs only)
+
+Whitney Book → paragraph text | Whitney Semi Bold → headers | Fallback: Helvetica / Arial
+
+---
+
+## 3. CSS Variables (always use — never hardcode hex)
+
+```css
+:root {
+  /* Colors */
+  --color-primary:     #1B3A6B;  /* Comfort Blue */
+  --color-accent:      #C0392B;  /* Burnt Vermilion */
+  --color-green:       #8FAF8A;  /* Soft Celadon */
+  --color-bg:          #FAF8F5;  /* Warm White */
+  --color-text:        #2C2C2C;  /* Charcoal */
+  --color-text-light:  rgba(44, 44, 44, 0.6);
+  --color-white:       #FFFFFF;
+
+  /* Typography */
+  --font-stack:        'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-size-h1:      clamp(32px, 5vw, 48px);
+  --font-size-h2:      clamp(24px, 4vw, 32px);
+  --font-size-h3:      20px;
+  --font-size-body:    15px;
+  --font-size-caption: 12px;
+
+  /* Spacing */
+  --radius-sm:  4px;
+  --radius-md:  8px;
+  --radius-lg:  16px;  /* Prefer rounded — echoes cushioned furniture */
+
+  /* Shadows — brand-colored, not generic gray */
+  --shadow-card:       0 1px 3px rgba(27, 58, 107, 0.04), 0 1px 2px rgba(27, 58, 107, 0.02);
+  --shadow-card-hover: 0 20px 40px -12px rgba(27, 58, 107, 0.15), 0 8px 16px -8px rgba(27, 58, 107, 0.08);
+  --shadow-glow:       0 0 40px -8px rgba(27, 58, 107, 0.12);
+}
+```
+
+---
+
+## 4. Logo Rules
+
+- **Never recreate the logo in CSS, SVG code, or any other medium** — handcrafted reproductions drift from the approved wordmark geometry and create trademark risk.
+- Always use: `<img src="/lazboy-logo.png" alt="La-Z-Boy" />`
+- Download official logo: https://brandguidelines.la-z-boy.com/89f81758c/p/73dcba-primary-logo
+- Save as `lazboy-logo.png` in the project's `public/` or `static/` directory
+- On dark backgrounds: `filter: brightness(0) invert(1)` (CSS) or Tailwind `brightness-0 invert`
+- Minimum size: 72px wide (digital) / 1 inch (print)
+- Recommended: header `h-10` (40px), footer `h-8` (32px)
+- Clearspace: equal to the height of the "L" on all sides
+- One-color variants (Comfort Blue or Black) when full color isn't available
+
+### Tagline
+Only approved form: `Live life comfortably.®`
+- Always include `®` symbol
+- Sentence case only — never ALL CAPS or altered wording
+
+---
+
+## 5. React / JSX
+
+```tsx
+// Base component with brand variables pre-applied
+import React from "react";
+
+interface BrandCardProps {
+  title: string;
+  children: React.ReactNode;
+  featured?: boolean;
+}
+
+export const BrandCard: React.FC<BrandCardProps> = ({ title, children, featured }) => (
+  <div
+    style={{
+      background: "var(--color-bg)",
+      borderRadius: "var(--radius-lg)",
+      boxShadow: "var(--shadow-card)",
+      padding: "24px",
+      transition: "box-shadow 250ms cubic-bezier(0.22, 1, 0.36, 1), transform 250ms cubic-bezier(0.22, 1, 0.36, 1)",
+      ...(featured && { borderTop: "3px solid var(--color-accent)" }),
+    }}
+    onMouseEnter={e => {
+      (e.currentTarget as HTMLElement).style.boxShadow = "var(--shadow-card-hover)";
+      (e.currentTarget as HTMLElement).style.transform = "translateY(-3px)";
+    }}
+    onMouseLeave={e => {
+      (e.currentTarget as HTMLElement).style.boxShadow = "var(--shadow-card)";
+      (e.currentTarget as HTMLElement).style.transform = "translateY(0)";
+    }}
+  >
+    <h3 style={{ color: "var(--color-primary)", fontFamily: "var(--font-stack)", fontWeight: 600 }}>
+      {title}
+    </h3>
+    <div style={{ color: "var(--color-text)", fontFamily: "var(--font-stack)" }}>
+      {children}
+    </div>
+  </div>
+);
+```
+
+- Import and use CSS variables — never hardcode hex values inline
+- Prefer rounded corners (`border-radius: var(--radius-md)`) — echoes the furniture aesthetic
+- Apply motion and depth guidelines from Section 8 — every component should feel polished
+
+---
+
+## 6. DOCX / Word Documents
+
+Use `python-docx` or the available file-creation tool:
+
+```
+Heading 1/2: Comfort Blue (#1B3A6B), Helvetica Neue Bold
+Body: Charcoal (#2C2C2C), Helvetica Neue Regular
+Background: Warm White (#FAF8F5) pages
+Accent lines / callout boxes: Burnt Vermilion (#C0392B) border, sparingly
+```
+
+---
+
+## 7. PPTX / Presentations
+
+Use `python-pptx` or the available file-creation tool:
+
+```
+Title slides: Comfort Blue (#1B3A6B) background, white title text
+Content slides: Warm White (#FAF8F5) background, Comfort Blue headings
+Max 2 accent colors per slide
+Burnt Vermilion for emphasis only — never as a slide background
+```
+
+---
+
+## 8. Email Templates
+
+```html
+<!-- Structure -->
+<table width="600" style="max-width:600px; margin:0 auto;">
+  <!-- Header bar -->
+  <tr>
+    <td style="background-color:#1B3A6B; padding:20px;">
+      <img src="lazboy-logo.png" alt="La-Z-Boy" height="32" />
+    </td>
+  </tr>
+  <!-- Body -->
+  <tr>
+    <td style="background-color:#FAF8F5; padding:32px; color:#2C2C2C;
+               font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; font-size:15px;">
+      <!-- content here -->
+    </td>
+  </tr>
+  <!-- CTA button -->
+  <tr>
+    <td style="padding:0 32px 32px;">
+      <a href="#" style="background-color:#C0392B; color:#FFFFFF; padding:12px 24px;
+                          text-decoration:none; border-radius:4px; font-weight:600;
+                          font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+        Shop Now
+      </a>
+    </td>
+  </tr>
+  <!-- Footer -->
+  <tr>
+    <td style="background-color:#FAF8F5; padding:20px; color:#2C2C2C; font-size:12px;
+               font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+      La-Z-Boy Incorporated | 1284 N Telegraph Rd, Monroe, MI 48162
+    </td>
+  </tr>
+</table>
+```
+
+---
+
+## 9. Design Quality Standards
+
+La-Z-Boy's aesthetic direction: **luxury editorial** — clean but warm, confident whitespace, dramatic type scale, atmospheric depth. Every output should feel crafted, not templated.
+
+### Shadows & Depth
+
+Use brand-colored shadows, never generic gray — this creates cohesive branded depth:
+
+```css
+/* Always use these variables from Section 3 */
+box-shadow: var(--shadow-card);
+/* on hover: */
+box-shadow: var(--shadow-card-hover);
+transform: translateY(-3px);
+transition: box-shadow 250ms cubic-bezier(0.22, 1, 0.36, 1),
+            transform 250ms cubic-bezier(0.22, 1, 0.36, 1);
+```
+
+### Backgrounds & Atmosphere
+
+- Hero/dark sections: use gradients — `background: linear-gradient(135deg, #1B3A6B, #152f58, #0f2140)`
+- Subtle noise/grain at 2–4% opacity adds tactile warmth
+- Dot grids or geometric patterns at 3–6% opacity create depth
+- Glass-morphism with `backdrop-filter: blur(12px)` works well for overlays on dark backgrounds
+
+### Layout & Spacing
+
+- **Asymmetric hero layouts**: text left, visual right — not centered text blocks
+- **Generous spacing**: `padding: 80px 0` (or `py-20`) for sections — comfort brand should breathe
+- **Decorative accents**: thin gradient bar at card tops, angled `clip-path` edges
+- **Grid-breaking moments**: hero card spanning 2 columns, or offset positioning
+
+### Motion & Animation
+
+```css
+/* Page load — staggered cascade */
+.card:nth-child(1) { animation-delay: 0ms; }
+.card:nth-child(2) { animation-delay: 100ms; }
+.card:nth-child(3) { animation-delay: 200ms; }
+
+/* All interactive state changes need transition */
+.interactive {
+  transition: all 250ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Hover lift */
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-card-hover);
+}
+```
+
+Match animation complexity to context — internal tools need subtle polish, not pyrotechnics.
+
+---
+
+## 10. Brand Voice & Tone
+
+- **Warm and inviting** — every touchpoint should feel like sinking into a favorite chair
+- **Comfortable, not casual** — professional but never stiff or corporate
+- **Nostalgic yet modern** — rooted in 1927 heritage, forward-looking in experience
+- **Calm and unhurried** — avoid urgency language, excessive punctuation, pushy sales tone
+
+**Prefer**: comfort, ease, quality, crafted, lasting, home, warmth
+**Avoid**: revolutionary, disruptive, best-in-class, synergy, leverage
+
+---
+
+## 11. What NOT to Do
+
+- Never hardcode hex values — always use CSS variables or tokens
+- Never use `#FFFFFF` as a page/slide background — use Warm White `#FAF8F5`
+- Never use a font other than Helvetica Neue (or approved fallbacks)
+- Never recreate the logo in CSS, SVG, or code — always use the official asset
+- Never distort, recolor, or add effects to the wordmark
+- Never use the tagline in any form other than `Live life comfortably.®`
+- Never use Burnt Vermilion + Soft Celadon as the dominant color pair — too much contrast
+- Never use Soft Celadon for body text — fails WCAG AA on white backgrounds
+- Never use legacy La-Z-Boy Red `#CC0000` for new work — use Burnt Vermilion `#C0392B`
+- Never use Burnt Vermilion as a background color
+- Never use generic gray shadows `rgba(0,0,0,0.1)` — use brand-colored shadows
+- Never use flat solid colors for hero backgrounds — use gradients within the palette

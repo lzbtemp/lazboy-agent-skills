@@ -1,0 +1,541 @@
+---
+description: Write reliable Playwright E2E tests for La-Z-Boy web applications using TypeScript and @playwright/test. Apply whenever writing browser tests, UI automation, spec files, Page Objects, fixtures, or playwright config for any La-Z-Boy site.
+globs: ["**/*.spec.ts", "**/*.test.ts", "**/playwright.config.ts", "**/fixtures.ts", "**/base-page.ts", "**/*-page.ts", "**/global-setup.ts"]
+alwaysApply: false
+---
+
+# La-Z-Boy Playwright Standards
+
+Write reliable, maintainable E2E tests using TypeScript and `@playwright/test`.
+
+---
+
+## 1. Agent Workflow — Discover Before Writing
+
+Before writing any test:
+1. Detect the dev server — check `BASE_URL` env var or common ports
+2. Navigate and wait for `networkidle` — ensure dynamic content has loaded
+3. Inspect the DOM to find real selectors
+4. Write the test using what you observed — never guess selectors
+
+```typescript
+const BASE_URL = process.env.BASE_URL ?? "http://localhost:3000";
+```
+
+Inject identifying headers when running as an agent:
+```typescript
+await page.setExtraHTTPHeaders({
+  "X-Automated-By": "playwright-lazboy",
+  "X-Test-Run": process.env.CI ? "ci" : "local",
+});
+```
+
+---
+
+## 2. Project Structure
+
+```
+tests/
+├── fixtures.ts                    # Import test/expect from here — NOT from @playwright/test
+├── helpers.ts                     # Data generators, API helpers, custom assertions
+└── {feature}/
+    ├── {feature}-page.ts          # Page Object for this feature
+    ├── {feature}.spec.ts          # All tests for this feature
+    └── {feature}.md               # Notes on selectors, known edge cases
+playwright.config.ts
+global-setup.ts
+```
+
+---
+
+## 3. Selector Strategy
+
+| Priority | Selector | When |
+|---|---|---|
+| 1 | `getByRole('button', { name: 'Add to Cart' })` | Interactive elements — tests accessibility too |
+| 2 | `getByLabel('Email address')` | Form inputs |
+| 3 | `getByTestId('product-card')` | Components without stable roles |
+| 4 | `getByText('...')` | Static text |
+| 5 | CSS selector | Last resort only |
+
+`getByRole` is preferred because it simultaneously tests that the element is accessible to screen readers. If a screen reader can't find it, neither should the test.
+
+### Chaining and filtering
+
+```typescript
+// Scope within a parent
+const card = page.getByTestId("product-card").filter({ hasText: "Barcelona Recliner" });
+const price = card.getByTestId("product-price");
+
+// Filter by child element
+const featured = page.getByRole("listitem").filter({
+  has: page.getByTestId("featured-badge"),
+});
+
+// nth() for indexed items
+const first = page.getByTestId("product-card").nth(0);
+const last  = page.getByTestId("cart-item").last();
+```
+
+### Form inputs
+
+```typescript
+await page.getByLabel("Email address").fill("test@lazboy.com");
+await page.getByPlaceholder("Search products...").fill("recliner");
+await page.getByLabel("Fabric Grade").selectOption("Grade A");
+await page.getByRole("checkbox", { name: "Add protection plan" }).check();
+```
+
+### Iframes (payment widgets, third-party embeds)
+
+```typescript
+const frame = page.frameLocator("#stripe-payment-iframe");
+await frame.getByLabel("Card number").fill("4242 4242 4242 4242");
+await frame.getByLabel("Expiry date").fill("12/26");
+```
+
+### Debugging selectors
+
+```bash
+PWDEBUG=1 npx playwright test tests/checkout/checkout.spec.ts
+```
+
+---
+
+## 4. Writing Tests
+
+```typescript
+import { test, expect } from "../fixtures";  // always import from local fixtures
+
+test.describe("Product Detail Page", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/products/lzb-recliner-001");
+    await page.waitForLoadState("networkidle");
+  });
+
+  test("adds product to cart",
+    { tag: ["@critical", "@pdp", "@PDP-E2E-001"] },
+    async ({ page }) => {
+      await page.getByRole("button", { name: "Add to Cart" }).click();
+      await expect(page.getByTestId("cart-count")).toHaveText("1");
+    }
+  );
+});
+```
+
+### Tag every test
+
+| Tag type | Format | Purpose |
+|---|---|---|
+| Priority | `@critical`, `@smoke` | Smoke suite for deployments |
+| Feature | `@pdp`, `@cart`, `@checkout` | Run one feature: `--grep @checkout` |
+| Type | `@e2e`, `@visual`, `@a11y` | Run by test type |
+| ID | `@PDP-E2E-001` | Link to ticket/test case |
+
+### Waiting — use expect() auto-retry, not manual waits
+
+```typescript
+// Correct — auto-retries until visible or timeout
+await expect(page.getByTestId("success-banner")).toBeVisible();
+
+// Wrong — hard-coded waits are fragile and slow
+await page.waitForTimeout(2000);
+```
+
+Use explicit waits only for navigation/network:
+```typescript
+await page.waitForLoadState("networkidle");  // after navigating to dynamic pages
+await page.waitForURL("**/confirmation");     // after form submission
+```
+
+---
+
+## 5. Page Object Model
+
+### BasePage — use this as the base for all page objects
+
+```typescript
+// base-page.ts
+import { Page, Locator, expect } from "@playwright/test";
+
+export class BasePage {
+  constructor(protected readonly page: Page) {}
+
+  async goto(path: string): Promise<void> {
+    await this.page.goto(path);
+    await this.page.waitForLoadState("networkidle");
+  }
+
+  async waitForUrl(urlPattern: string | RegExp): Promise<void> {
+    await this.page.waitForURL(urlPattern);
+    await this.page.waitForLoadState("networkidle");
+  }
+
+  async dismissToast(): Promise<void> {
+    const toast = this.page.getByRole("alert");
+    if (await toast.isVisible()) {
+      const btn = toast.getByRole("button", { name: /close|dismiss/i });
+      if (await btn.isVisible()) await btn.click();
+    }
+  }
+
+  async assertTitle(expected: string | RegExp): Promise<void> {
+    await expect(this.page).toHaveTitle(expected);
+  }
+
+  async assertUrl(expected: string | RegExp): Promise<void> {
+    await expect(this.page).toHaveURL(expected);
+  }
+
+  async assertSuccessMessage(text: string | RegExp): Promise<void> {
+    await expect(
+      this.page.getByRole("alert").filter({ hasText: text })
+    ).toBeVisible();
+  }
+}
+```
+
+### Example Page Object
+
+```typescript
+import { Page, Locator, expect } from "@playwright/test";
+import { BasePage } from "../base-page";
+
+export class ProductDetailPage extends BasePage {
+  private readonly addToCartButton: Locator;
+  private readonly productPrice: Locator;
+
+  constructor(page: Page) {
+    super(page);
+    this.addToCartButton = page.getByRole("button", { name: "Add to Cart" });
+    this.productPrice = page.getByTestId("product-price");
+  }
+
+  async gotoProduct(sku: string): Promise<void> {
+    await this.goto(`/products/${sku}`);
+  }
+
+  async addToCart(): Promise<void> {
+    await this.addToCartButton.click();
+    await expect(this.page.getByTestId("cart-count")).not.toHaveText("0");
+  }
+
+  async getPrice(): Promise<string> {
+    return (await this.productPrice.textContent()) ?? "";
+  }
+}
+```
+
+What belongs in BasePage vs page-specific:
+- **BasePage**: navigation, toast handling, common assertions, error handling
+- **Page-specific**: locators, business actions (`addToCart`), page-specific assertions
+
+---
+
+## 6. Fixtures with test.extend()
+
+Always import `test` and `expect` from `./fixtures`, not `@playwright/test`. This ensures every test has access to Page Objects and auth contexts.
+
+```typescript
+// tests/fixtures.ts
+import { test as base, Page, Browser } from "@playwright/test";
+import { ProductDetailPage } from "./products/product-detail-page";
+import { CheckoutPage } from "./checkout/checkout-page";
+
+type LazboyFixtures = {
+  customerPage: Page;
+  adminPage: Page;
+  guestPage: Page;
+  productPage: ProductDetailPage;
+  checkoutPage: CheckoutPage;
+};
+
+export const test = base.extend<LazboyFixtures>({
+  // Authenticated customer context
+  customerPage: async ({ browser }: { browser: Browser }, use: (page: Page) => Promise<void>) => {
+    const ctx = await browser.newContext({ storageState: ".auth/customer.json" });
+    const page = await ctx.newPage();
+    await use(page);
+    await ctx.close();
+  },
+
+  // Authenticated admin context
+  adminPage: async ({ browser }: { browser: Browser }, use: (page: Page) => Promise<void>) => {
+    const ctx = await browser.newContext({ storageState: ".auth/admin.json" });
+    const page = await ctx.newPage();
+    await use(page);
+    await ctx.close();
+  },
+
+  // Unauthenticated guest context
+  guestPage: async ({ browser }: { browser: Browser }, use: (page: Page) => Promise<void>) => {
+    const ctx = await browser.newContext();
+    const page = await ctx.newPage();
+    await use(page);
+    await ctx.close();
+  },
+
+  productPage: async ({ page }, use) => {
+    await use(new ProductDetailPage(page));
+  },
+
+  checkoutPage: async ({ page }, use) => {
+    await use(new CheckoutPage(page));
+  },
+});
+
+export { expect } from "@playwright/test";
+```
+
+---
+
+## 7. Authentication — storageState
+
+Login once in `global-setup.ts`; reuse across all tests. Never log in through the UI in each test.
+
+```typescript
+// global-setup.ts
+import { chromium, FullConfig } from "@playwright/test";
+
+async function globalSetup(config: FullConfig): Promise<void> {
+  const { baseURL } = config.projects[0].use;
+  const browser = await chromium.launch();
+
+  // Customer auth
+  const customerPage = await browser.newPage();
+  await customerPage.goto(`${baseURL}/login`);
+  await customerPage.getByLabel("Email").fill(process.env.TEST_CUSTOMER_EMAIL!);
+  await customerPage.getByLabel("Password").fill(process.env.TEST_CUSTOMER_PASSWORD!);
+  await customerPage.getByRole("button", { name: "Sign In" }).click();
+  await customerPage.waitForURL("**/account");
+  await customerPage.context().storageState({ path: ".auth/customer.json" });
+
+  // Admin auth
+  const adminPage = await browser.newPage();
+  await adminPage.goto(`${baseURL}/admin/login`);
+  await adminPage.getByLabel("Email").fill(process.env.TEST_ADMIN_EMAIL!);
+  await adminPage.getByLabel("Password").fill(process.env.TEST_ADMIN_PASSWORD!);
+  await adminPage.getByRole("button", { name: "Sign In" }).click();
+  await adminPage.waitForURL("**/admin/dashboard");
+  await adminPage.context().storageState({ path: ".auth/admin.json" });
+
+  await browser.close();
+}
+
+export default globalSetup;
+```
+
+Credentials: `TEST_CUSTOMER_EMAIL`, `TEST_CUSTOMER_PASSWORD`, `TEST_ADMIN_EMAIL`, `TEST_ADMIN_PASSWORD` — always from env vars, never hardcoded.
+
+---
+
+## 8. API Setup + UI Assertion
+
+Use Playwright's `request` fixture to seed test data — faster and more reliable than UI-only setup.
+
+```typescript
+test("order history shows most recent order", async ({ page, request }) => {
+  // Seed via API (fast, no UI flakiness)
+  const order = await request.post("/api/orders", {
+    data: { sku: "LZB-001", quantity: 1 },
+    headers: { Authorization: `Bearer ${process.env.TEST_API_TOKEN}` },
+  });
+  expect(order.ok()).toBeTruthy();
+  const { orderId } = await order.json();
+
+  // Assert UI reflects it
+  await page.goto("/account/orders");
+  await expect(page.getByTestId(`order-${orderId}`)).toBeVisible();
+});
+```
+
+### Helpers
+
+```typescript
+// tests/helpers.ts
+export function testEmail(prefix = "test"): string {
+  return `${prefix}+${Date.now()}@lazboy-test.com`;
+}
+
+export async function seedProduct(
+  request: APIRequestContext,
+  overrides: Partial<ProductPayload> = {}
+): Promise<string> {
+  const res = await request.post("/api/test/products", {
+    data: { name: "Test Recliner", price: 999.99, category: "seating", ...overrides },
+    headers: { Authorization: `Bearer ${process.env.TEST_API_TOKEN}` },
+  });
+  const { sku } = await res.json();
+  return sku;
+}
+```
+
+---
+
+## 9. playwright.config.ts Template
+
+Copy this to the root of any new La-Z-Boy test project:
+
+```typescript
+import { defineConfig, devices } from "@playwright/test";
+
+export default defineConfig({
+  testDir: "./tests",
+  workers: process.env.CI ? 2 : 4,
+  retries: process.env.CI ? 1 : 0,
+  maxFailures: process.env.CI ? 10 : undefined,
+  timeout: 30_000,
+  expect: { timeout: 5_000 },
+
+  reporter: [
+    ["html", { open: "never", outputFolder: "playwright-report" }],
+    ["list"],
+  ],
+
+  use: {
+    baseURL: process.env.BASE_URL ?? "http://localhost:3000",
+    trace: "on-first-retry",
+    screenshot: "only-on-failure",
+    video: "retain-on-failure",
+    extraHTTPHeaders: {
+      "X-Automated-By": "playwright-lazboy",
+      "X-Test-Run": process.env.CI ? "ci" : "local",
+    },
+    viewport: { width: 1440, height: 900 },
+    locale: "en-US",
+    timezoneId: "America/Detroit",
+  },
+
+  projects: [
+    { name: "setup", testMatch: /global-setup\.ts/ },
+    {
+      name: "chromium",
+      use: { ...devices["Desktop Chrome"] },
+      dependencies: ["setup"],
+    },
+    {
+      name: "mobile-safari",
+      use: { ...devices["iPhone 14"] },
+      dependencies: ["setup"],
+    },
+    {
+      name: "tablet",
+      use: { ...devices["iPad Pro 11"] },
+      dependencies: ["setup"],
+    },
+  ],
+
+  outputDir: "test-results/",
+  globalSetup: "./global-setup.ts",
+});
+```
+
+---
+
+## 10. CI/CD — GitHub Actions with Sharding
+
+```yaml
+# .github/workflows/playwright.yml
+name: Playwright Tests
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: "Playwright Tests (Shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }})"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shardIndex: [1, 2, 3, 4]
+        shardTotal: [4]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Run tests
+        run: npx playwright test --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
+        env:
+          BASE_URL: ${{ vars.STAGING_URL }}
+          TEST_CUSTOMER_EMAIL: ${{ secrets.TEST_CUSTOMER_EMAIL }}
+          TEST_CUSTOMER_PASSWORD: ${{ secrets.TEST_CUSTOMER_PASSWORD }}
+          TEST_ADMIN_EMAIL: ${{ secrets.TEST_ADMIN_EMAIL }}
+          TEST_ADMIN_PASSWORD: ${{ secrets.TEST_ADMIN_PASSWORD }}
+          TEST_API_TOKEN: ${{ secrets.TEST_API_TOKEN }}
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-shard-${{ matrix.shardIndex }}
+          path: playwright-report/
+      - name: Upload traces on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces-shard-${{ matrix.shardIndex }}
+          path: test-results/
+
+  merge-reports:
+    needs: test
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20", cache: "npm" }
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with: { path: all-reports, pattern: playwright-report-shard-* }
+      - run: npx playwright merge-reports --reporter html ./all-reports
+      - uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-merged
+          path: playwright-report/
+          retention-days: 30
+```
+
+### Trace Viewer — debugging failures
+
+```bash
+# Open a trace file from a failed test
+npx playwright show-trace test-results/my-test-failed/trace.zip
+```
+
+In the Trace Viewer, look for:
+- Long gaps in timeline → slow network or missed wait
+- 401/403 in network panel → auth state expired
+- Console errors → JS errors that didn't fail the test
+- Element never appears → check network panel for missing API response
+
+---
+
+## 11. Environment Variables
+
+```bash
+# .env.example — commit this, never commit .env
+BASE_URL=http://localhost:3000
+TEST_CUSTOMER_EMAIL=customer@test.lazboy.com
+TEST_CUSTOMER_PASSWORD=change-me
+TEST_ADMIN_EMAIL=admin@test.lazboy.com
+TEST_ADMIN_PASSWORD=change-me
+TEST_API_TOKEN=your-test-api-token
+```
+
+---
+
+## 12. What NOT to Do
+
+- Don't import from `@playwright/test` directly — always from `./fixtures`
+- Don't use `page.waitForTimeout()` — use `expect` auto-retry instead
+- Don't hardcode credentials or URLs
+- Don't use CSS class selectors as first choice — prefer role/label/testid
+- Don't skip `waitForLoadState('networkidle')` after navigating to dynamic pages
+- Don't log in through UI in every test — use `storageState` via `global-setup.ts`
+- Don't use `asyncio.gather`-style patterns — `TaskGroup` is not relevant here, but DO prefer `Promise.all` over sequential awaits for independent async operations

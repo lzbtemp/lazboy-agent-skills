@@ -48,10 +48,13 @@ cd lazboy-agent-skills
 
 ## Available Skills
 
-| Skill | Description | Version |
-|-------|-------------|---------|
-| [`lazboy-brand`](./skills/lazboy-brand/) | Brand colors, fonts, logo usage for all agent outputs | 2.0 |
-| [`lazboy-skill-standard`](./skills/lazboy-skill-standard/) | Org standard for creating and maintaining skills | 1.0 |
+| Skill | Description | Version | Cursor? |
+|-------|-------------|---------|---------|
+| [`lazboy-brand`](./skills/lazboy-brand/) | Brand colors, fonts, logo usage for all agent outputs | 1.0 | ✅ |
+| [`lazboy-skill-standard`](./skills/lazboy-skill-standard/) | Org standard for creating and maintaining skills | 1.0 | — |
+| [`lazboy-python-best-practices`](./skills/lazboy-python-best-practices/) | Python 3.12+ standards, tooling, testing, async patterns | 1.0 | ✅ |
+| [`lazboy-playwright`](./skills/lazboy-playwright/) | Playwright E2E tests, Page Objects, fixtures, CI/CD setup | 1.0 | ✅ |
+| [`lazboy-logging`](./skills/lazboy-logging/) | Application logging — structured JSON, correlation IDs, Python setup, security | 1.0 | ✅ |
 
 > See the [Skill Portal] for a full browsable catalog with previews.
 
@@ -61,15 +64,24 @@ cd lazboy-agent-skills
 
 ```
 lazboy-agent-skills/
-├── skills/                    # All org skills live here
-│   ├── lazboy-brand/          # Each skill follows the standard structure
-│   └── lazboy-skill-standard/
-├── install.sh                 # CLI installer for Claude Code + Cursor
+├── skills/                          # Claude Code skills (SKILL.md format)
+│   ├── lazboy-brand/
+│   ├── lazboy-skill-standard/
+│   ├── lazboy-python-best-practices/
+│   ├── lazboy-playwright/
+│   └── lazboy-logging/
+├── cursor-rules/                    # Cursor adaptations (.mdc format)
+│   ├── lazboy-brand.mdc
+│   ├── lazboy-python-best-practices.mdc
+│   ├── lazboy-playwright.mdc
+│   ├── lazboy-logging.mdc
+│   └── README.md
+├── install.sh                       # CLI installer for Claude Code + Cursor
 ├── docs/
-│   ├── contributing.md        # How to add a new skill
-│   └── skill-anatomy.md       # Reference: what each folder does
+│   ├── contributing.md
+│   └── skill-anatomy.md
 ├── .github/
-│   └── ISSUE_TEMPLATE/        # Templates for skill requests + bug reports
+│   └── ISSUE_TEMPLATE/
 └── README.md
 ```
 

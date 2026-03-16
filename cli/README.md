@@ -29,7 +29,7 @@ npx @lazboy/skills remove lazboy-brand
 
 ## What it does
 
-- Connects to the `lazboy/lazboy-agent-skills` GitHub repo
+- Connects to the `lzbtemp/lazboy-agent-skills` GitHub repo
 - Downloads **only** the skill folder you asked for
 - Places it in `.claude/skills/<skill-name>/` for Claude Code
 - Optionally generates a `.cursor/rules/<skill-name>.mdc` for Cursor
@@ -37,7 +37,7 @@ npx @lazboy/skills remove lazboy-brand
 
 ## Private repo setup
 
-If the repo is private, set a GitHub token before running:
+If the skills repo is private, set a GitHub token before running:
 
 ```bash
 export GITHUB_TOKEN=your_personal_access_token
@@ -50,22 +50,6 @@ To generate a token: GitHub → Settings → Developer Settings → Personal Acc
 
 ## Publishing this CLI (for maintainers)
 
-### First time setup
-
-1. Make sure you're logged into GitHub Packages:
-```bash
-npm login --registry=https://npm.pkg.github.com --scope=@lazboy
-# Username: your GitHub username
-# Password: a GitHub token with write:packages permission
-# Email: your email
-```
-
-2. Publish:
-```bash
-cd cli/
-npm publish
-```
-
 ### Publishing a new version
 
 1. Update the version in `package.json`:
@@ -77,30 +61,18 @@ npm version patch   # 1.0.0 → 1.0.1
 npm version minor   # 1.0.0 → 1.1.0
 ```
 
-2. Publish:
+2. Publish to npm:
 ```bash
-npm publish
+cd cli/
+npm publish --access public
 ```
 
 ### After publishing
 
-Anyone in the org can now run:
+Anyone can now run:
 ```bash
+npx @lazboy/skills list
 npx @lazboy/skills add lazboy-brand
 ```
 
----
-
-## For users: one-time npm config
-
-Because `@lazboy` is scoped to GitHub Packages (not the public npm registry), users need to tell npm where to find it. This is a **one-time setup per machine**:
-
-```bash
-# Add this to ~/.npmrc
-echo "@lazboy:registry=https://npm.pkg.github.com" >> ~/.npmrc
-
-# Authenticate (only needed for private packages)
-npm login --registry=https://npm.pkg.github.com --scope=@lazboy
-```
-
-After that, `npx @lazboy/skills` works like any other npx command.
+No setup, no tokens, no `.npmrc` config needed — it's a public npm package.

@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 // =============================================================================
-// @lzbtemp/skills — La-Z-Boy Agent Skills CLI
+// @lazboy/skills — La-Z-Boy Agent Skills CLI
 // =============================================================================
 // Usage:
-//   npx @lzbtemp/skills list
-//   npx @lzbtemp/skills add lazboy-brand
-//   npx @lzbtemp/skills add lazboy-brand --global
-//   npx @lzbtemp/skills add lazboy-brand --cursor
-//   npx @lzbtemp/skills update lazboy-brand
-//   npx @lzbtemp/skills remove lazboy-brand
+//   npx @lazboy/skills list
+//   npx @lazboy/skills add lazboy-brand
+//   npx @lazboy/skills add lazboy-brand --global
+//   npx @lazboy/skills add lazboy-brand --cursor
+//   npx @lazboy/skills update lazboy-brand
+//   npx @lazboy/skills remove lazboy-brand
 // =============================================================================
 
 const https  = require('https');

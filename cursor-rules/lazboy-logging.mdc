@@ -1,0 +1,351 @@
+---
+description: La-Z-Boy application logging best practices — structured JSON logging, log levels, correlation IDs, security (no PII/secrets), Python logging setup, FastAPI middleware, and observability patterns. Apply whenever writing or reviewing logging code for any La-Z-Boy service.
+globs: ["**/*.py", "**/*.ts", "**/*.tsx", "**/*.js"]
+alwaysApply: false
+---
+
+# La-Z-Boy Application Logging Standards
+
+Well-designed logging is the difference between a 5-minute and a 5-hour debugging session in production. Follow these standards for every La-Z-Boy service.
+
+---
+
+## 1. Log Levels — Match Severity to Event
+
+| Level | When to use | Example |
+|---|---|---|
+| `DEBUG` | Developer diagnostics — disabled in production | SQL query params, internal state |
+| `INFO` | Significant business events | Order created, user authenticated |
+| `WARNING` | Unexpected but recoverable | Config fallback, retry attempt |
+| `ERROR` | A specific operation failed — needs investigation | Payment API returned 500 |
+| `CRITICAL` | The application cannot continue | DB connection pool exhausted |
+
+```python
+logger.debug("Cache miss", extra={"key": cache_key})
+logger.info("Order placed", extra={"order_id": order.id, "customer_id": customer.id})
+logger.warning("Config missing, using default", extra={"key": "MAX_RETRIES", "default": 3})
+logger.error("Payment gateway error", extra={"order_id": order.id}, exc_info=True)
+logger.critical("DB connection pool exhausted", extra={"pool_size": config.pool_size})
+```
+
+**Rule**: Never log `ERROR` for expected business flows — "product not found" is `WARNING`, not `ERROR`.
+
+---
+
+## 2. Structured Logging — Always JSON in Production
+
+Unstructured log lines are unqueryable. Structured logs let your aggregator (Datadog, CloudWatch, Splunk) filter, group, and alert.
+
+```python
+# Wrong — unstructured, impossible to filter by order_id
+logger.info(f"Processing order {order_id} for user {user_id}")
+
+# Correct — structured fields, fully queryable
+logger.info("Order processing started", extra={
+    "order_id": order_id,
+    "user_id": user_id,
+    "sku_count": len(order.items),
+})
+```
+
+### Minimum required fields (every log line)
+
+```json
+{
+  "timestamp":      "2025-01-15T14:32:11.234Z",
+  "level":          "INFO",
+  "logger":         "lazboy_orders.service",
+  "message":        "Order processing started",
+  "correlation_id": "req-a1b2c3d4",
+  "service":        "orders-api",
+  "environment":    "production"
+}
+```
+
+---
+
+## 3. Correlation IDs — Connect Logs Across Services
+
+Without correlation IDs, debugging a request across 4 services means grepping 4 streams and mentally joining them. With a propagated correlation ID, you grep once.
+
+```
+Client ──► API Gateway ──► orders-api ──► inventory-api ──► database
+            generates        propagates     propagates
+            X-Correlation-ID → header    → header
+```
+
+**Rules**:
+1. Generate at the edge (API Gateway or first service)
+2. Extract from `X-Correlation-ID` header — or generate `uuid4()` if missing
+3. Store in `ContextVar` (Python) so it appears in all logs without passing it everywhere
+4. Inject into all outbound HTTP calls as `X-Correlation-ID` header
+5. Return in the HTTP response so clients can report it in support tickets
+
+```python
+# Propagate to downstream services
+async def call_inventory(sku: str) -> dict:
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"{INVENTORY_API}/products/{sku}",
+            headers={"X-Correlation-ID": get_correlation_id()},
+        )
+    return response.json()
+```
+
+---
+
+## 4. Security — What NEVER to Log
+
+Logging sensitive data is a security incident. Log files end up in aggregators, S3 buckets, and CI artifacts — all with broader access than production databases.
+
+```python
+# NEVER log these
+logger.info("User login", extra={
+    "password": request.password,     # ❌ credential
+    "api_key": config.api_key,        # ❌ secret
+    "credit_card": order.card_number, # ❌ PCI data
+    "ssn": customer.ssn,              # ❌ PII
+    "token": auth_token,              # ❌ secret
+})
+
+# Log identifiers and metadata, not values
+logger.info("User login", extra={
+    "user_id": user.id,               # ✅ identifier
+    "email_domain": email.split("@")[1],  # ✅ non-identifying fragment
+    "auth_method": "oauth2",          # ✅ metadata
+})
+```
+
+### Sanitize before logging request bodies
+
+```python
+_SENSITIVE_KEYS = frozenset({
+    "password", "passwd", "secret", "token", "api_key", "apikey",
+    "authorization", "credit_card", "card_number", "cvv", "ssn",
+})
+
+def sanitize_payload(data: dict, redacted: str = "[REDACTED]") -> dict:
+    result = {}
+    for key, value in data.items():
+        if key.lower() in _SENSITIVE_KEYS:
+            result[key] = redacted
+        elif isinstance(value, dict):
+            result[key] = sanitize_payload(value, redacted)
+        else:
+            result[key] = value
+    return result
+
+logger.debug("Request body", extra={"body": sanitize_payload(request_body)})
+```
+
+---
+
+## 5. Python Setup
+
+### JSON Formatter
+
+```python
+import json
+import logging
+import traceback
+from contextvars import ContextVar
+from datetime import datetime, timezone
+
+_correlation_id: ContextVar[str] = ContextVar("correlation_id", default="")
+
+def get_correlation_id() -> str:
+    return _correlation_id.get()
+
+def set_correlation_id(value: str) -> None:
+    _correlation_id.set(value)
+
+_RESERVED = frozenset({
+    "name", "msg", "args", "levelname", "levelno", "pathname", "filename",
+    "module", "exc_info", "exc_text", "stack_info", "lineno", "funcName",
+    "created", "msecs", "relativeCreated", "thread", "threadName",
+    "processName", "process", "message", "taskName",
+})
+
+class JsonFormatter(logging.Formatter):
+    def __init__(self, service_name: str, environment: str) -> None:
+        super().__init__()
+        self.service_name = service_name
+        self.environment = environment
+
+    def format(self, record: logging.LogRecord) -> str:
+        payload: dict = {
+            "timestamp": datetime.fromtimestamp(record.created, tz=timezone.utc).isoformat(),
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+            "service": self.service_name,
+            "environment": self.environment,
+        }
+        if cid := _correlation_id.get():
+            payload["correlation_id"] = cid
+        for key, val in record.__dict__.items():
+            if key not in _RESERVED and not key.startswith("_"):
+                payload[key] = val
+        if record.exc_info:
+            exc_type, exc_value, _ = record.exc_info
+            payload["exception"] = {
+                "type": exc_type.__name__ if exc_type else None,
+                "message": str(exc_value),
+                "traceback": traceback.format_exception(*record.exc_info),
+            }
+            record.exc_info = None
+        return json.dumps(payload, default=str)
+
+
+class CorrelationIdFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        record.correlation_id = _correlation_id.get()
+        return True
+```
+
+### Setup function (call once at startup)
+
+```python
+import logging
+import os
+import sys
+
+def setup_logging(service_name: str, level: str | None = None, environment: str | None = None) -> None:
+    env = environment or os.getenv("ENVIRONMENT", "development")
+    default_level = "DEBUG" if env == "development" else "INFO"
+    numeric_level = getattr(logging, (level or os.getenv("LOG_LEVEL", default_level)).upper(), logging.INFO)
+
+    formatter = JsonFormatter(service_name=service_name, environment=env)
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(formatter)
+    handler.addFilter(CorrelationIdFilter())
+    handler.setLevel(numeric_level)
+
+    root = logging.getLogger()
+    root.setLevel(numeric_level)
+    root.handlers.clear()
+    root.addHandler(handler)
+
+    logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+
+# In main.py or app factory:
+# setup_logging(service_name="orders-api")
+```
+
+### Acquire loggers by module name
+
+```python
+import logging
+logger = logging.getLogger(__name__)  # never share loggers across modules
+```
+
+---
+
+## 6. FastAPI Middleware
+
+```python
+import logging
+import time
+import uuid
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+from starlette.responses import Response
+
+logger = logging.getLogger(__name__)
+CORRELATION_ID_HEADER = "X-Correlation-ID"
+
+class RequestLoggingMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next) -> Response:
+        correlation_id = (
+            request.headers.get(CORRELATION_ID_HEADER)
+            or f"req-{uuid.uuid4().hex[:12]}"
+        )
+        set_correlation_id(correlation_id)
+
+        start = time.perf_counter()
+        response = await call_next(request)
+        duration_ms = round((time.perf_counter() - start) * 1000, 1)
+
+        logger.info(
+            "HTTP request completed",
+            extra={
+                "method": request.method,
+                "path": request.url.path,
+                "status_code": response.status_code,
+                "duration_ms": duration_ms,
+                "client_ip": request.client.host if request.client else None,
+            },
+        )
+        response.headers[CORRELATION_ID_HEADER] = correlation_id
+        return response
+
+# In app setup:
+# app.add_middleware(RequestLoggingMiddleware)
+```
+
+---
+
+## 7. What to Log at Each Layer
+
+### HTTP layer (middleware)
+```json
+{"message": "HTTP request completed", "method": "POST", "path": "/api/orders", "status_code": 201, "duration_ms": 143}
+```
+
+### Service layer (business logic)
+```json
+{"message": "Order validated", "order_id": "ORD-9921", "item_count": 3}
+{"message": "Inventory reservation failed", "sku": "LZB-001", "requested_qty": 2, "available_qty": 0}
+```
+
+### Repository layer (data access)
+Log slow queries and failures — not every query.
+```json
+{"message": "Slow query detected", "query": "find_orders_by_customer", "duration_ms": 412, "threshold_ms": 200}
+```
+
+### Error logging — always include context + traceback
+```python
+try:
+    result = await inventory_client.check_stock(sku)
+except ExternalServiceError as err:
+    logger.error(
+        "Inventory check failed",
+        extra={"sku": sku, "order_id": order_id, "service": "inventory-api"},
+        exc_info=True,  # always include traceback on ERROR and CRITICAL
+    )
+    raise
+```
+
+---
+
+## 8. Log Level by Environment
+
+| Environment | Level | Why |
+|---|---|---|
+| Development | `DEBUG` | Full visibility for local debugging |
+| Staging | `INFO` | Production-like |
+| Production | `INFO` | Signal without noise; `DEBUG` via env override only |
+
+```python
+import os
+import logging
+
+env = os.getenv("ENVIRONMENT", "development")
+level = "DEBUG" if env == "development" else "INFO"
+```
+
+---
+
+## 9. What NOT to Do
+
+- **Never use `print()` for logging** — no levels, timestamps, or aggregation
+- **Never log passwords, tokens, API keys, PII, or card numbers** — security incident
+- **Never use f-strings in logger calls** — defeats lazy evaluation; use `extra={}` instead
+- **Never log at `INFO` for every function call** — noise drowns signal; use `DEBUG`
+- **Never catch-and-log-only without re-raising** — silently swallowed errors are worse than crashes
+- **Never create unbounded log files without rotation** — disk exhaustion in production
+- **Never skip `exc_info=True` on error logs** — traceback is the most valuable part
+- **Never hardcode correlation IDs** — always generate from `uuid4()`
+- **Never use generic gray shadows** — wait, wrong rule file 😄 — but seriously: never use unstructured logs

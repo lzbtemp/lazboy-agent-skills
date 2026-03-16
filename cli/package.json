@@ -1,10 +1,10 @@
 {
-  "name": "@lzbtemp/skills",
+  "name": "@lazboy/skills",
   "version": "1.0.0",
   "description": "La-Z-Boy Agent Skills CLI — install and manage AI agent skills for Claude Code and Cursor",
   "main": "index.js",
   "bin": {
-    "lazboy-skills": "./index.js"
+    "skills": "index.js"
   },
   "scripts": {
     "test": "node index.js list"
@@ -14,7 +14,8 @@
   "license": "UNLICENSED",
   "private": false,
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
+    "registry": "https://registry.npmjs.org",
+    "access": "public"
   },
   "repository": {
     "type": "git",
