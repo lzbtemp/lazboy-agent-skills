@@ -40,12 +40,22 @@ The distinctive "L", "Z", and hyphens are signature elements and must never be a
 
 **Logo usage rules**
 - **Never recreate the logo as SVG text, CSS, or code** — handcrafted reproductions always drift from the approved wordmark geometry, and code-generated logos create legal risk around trademark accuracy. Always use the bundled asset files.
-- **Copy from this skill's assets:** `assets/logos/` contains official logo PNGs in multiple sizes
-  - `lazboy-logo-navy.png` — full resolution (3168x1129), for print/high-DPI
-  - `lazboy-logo-navy-400w.png` — standard web header
-  - `lazboy-logo-navy-200w.png` — compact header, sidebar, footer
-  - `lazboy-logo-navy-80w.png` — small badges, favicon-sized
-- Copy the appropriate size into your project's `public/` or `static/` directory
+- **Logo files are available via GitHub raw URL.** Do NOT use read/write tools to copy PNGs — binary files get corrupted. Instead, use a shell command:
+  ```bash
+  # Standard web header (400w) — recommended for most projects
+  curl -sL "https://raw.githubusercontent.com/lzbtemp/lazboy-agent-skills/main/skills/lazboy-brand/assets/logos/lazboy-logo-navy-400w.png" -o public/lazboy-logo.png
+
+  # Compact (200w) — for sidebar, footer
+  curl -sL "https://raw.githubusercontent.com/lzbtemp/lazboy-agent-skills/main/skills/lazboy-brand/assets/logos/lazboy-logo-navy-200w.png" -o public/lazboy-logo.png
+
+  # Full resolution (3168x1129) — for print/high-DPI
+  curl -sL "https://raw.githubusercontent.com/lzbtemp/lazboy-agent-skills/main/skills/lazboy-brand/assets/logos/lazboy-logo-navy.png" -o public/lazboy-logo.png
+
+  # Small badge (80w)
+  curl -sL "https://raw.githubusercontent.com/lzbtemp/lazboy-agent-skills/main/skills/lazboy-brand/assets/logos/lazboy-logo-navy-80w.png" -o public/lazboy-logo.png
+  ```
+- **IMPORTANT:** Always use `curl`, `cp`, or `wget` to copy logo files. Never use file read/write tools — they corrupt binary PNG data.
+- Adjust the output path (`public/`, `static/`, `src/assets/`) to match your project structure
 - Reference via `<img src="/lazboy-logo.png" alt="La-Z-Boy" />`
 - For white/reversed on dark backgrounds: add CSS `brightness-0 invert`
 - Use approved one-color variants (Comfort Blue or Black) when full color isn't available

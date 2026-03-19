@@ -15,9 +15,16 @@ All files: PNG with transparent background, Navy (Comfort Blue #1B3A6B).
 
 ## How to Use
 
-### Copy into your project
+### IMPORTANT: Use shell commands to copy — never read/write tools
+AI agents (Claude, Cursor) corrupt binary PNG files when using text-based read/write tools.
+Always use `curl` or `cp` via a shell command:
+
 ```bash
-cp logos/lazboy-logo-navy-400w.png /path/to/your/project/public/lazboy-logo.png
+# Download from GitHub (works in any project)
+curl -sL "https://raw.githubusercontent.com/lzbtemp/lazboy-agent-skills/main/skills/lazboy-brand/assets/logos/lazboy-logo-navy-400w.png" -o public/lazboy-logo.png
+
+# Or copy locally if the skill repo is cloned
+cp /path/to/lazboy-agent-skills/skills/lazboy-brand/assets/logos/lazboy-logo-navy-400w.png public/lazboy-logo.png
 ```
 
 ### HTML
