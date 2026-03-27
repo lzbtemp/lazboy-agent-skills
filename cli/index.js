@@ -48,22 +48,26 @@ const log = {
   title:   (msg) => console.log(`\n${c.bold}${c.blue}${msg}${c.reset}`),
 };
 
-// ── HTTP helper ───────────────────────────────────────────────────────────────
+// ── HTTP helpers ──────────────────────────────────────────────────────────────
+
+// Build common request options
+function buildOptions() {
+  const options = {
+    headers: {
+      'User-Agent': '@lazboy/skills-cli',
+      'Accept': 'application/vnd.github.v3+json',
+    }
+  };
+  if (process.env.GITHUB_TOKEN) {
+    options.headers['Authorization'] = `token ${process.env.GITHUB_TOKEN}`;
+  }
+  return options;
+}
+
+// GET as UTF-8 string (for text files, JSON APIs)
 function get(url) {
   return new Promise((resolve, reject) => {
-    const options = {
-      headers: {
-        'User-Agent': '@lazboy/skills-cli',
-        'Accept': 'application/vnd.github.v3+json',
-      }
-    };
-    // Support GitHub token for private repos
-    if (process.env.GITHUB_TOKEN) {
-      options.headers['Authorization'] = `token ${process.env.GITHUB_TOKEN}`;
-    }
-
-    https.get(url, options, (res) => {
-      // Follow redirects
+    https.get(url, buildOptions(), (res) => {
       if (res.statusCode === 301 || res.statusCode === 302) {
         return get(res.headers.location).then(resolve).catch(reject);
       }
@@ -80,6 +84,33 @@ function get(url) {
     }).on('error', reject);
   });
 }
+
+// GET as Buffer (for binary files: png, jpg, pdf, etc.)
+function getBuffer(url) {
+  return new Promise((resolve, reject) => {
+    https.get(url, buildOptions(), (res) => {
+      if (res.statusCode === 301 || res.statusCode === 302) {
+        return getBuffer(res.headers.location).then(resolve).catch(reject);
+      }
+      if (res.statusCode === 404) {
+        return reject(new Error(`Not found: ${url}`));
+      }
+      if (res.statusCode !== 200) {
+        return reject(new Error(`HTTP ${res.statusCode}: ${url}`));
+      }
+      const chunks = [];
+      res.on('data', chunk => chunks.push(chunk));
+      res.on('end', () => resolve(Buffer.concat(chunks)));
+      res.on('error', reject);
+    }).on('error', reject);
+  });
+}
+
+// File extensions that must be downloaded as binary buffers
+const BINARY_EXTENSIONS = new Set([
+  '.png', '.jpg', '.jpeg', '.gif', '.ico', '.webp', '.bmp',
+  '.pdf', '.zip', '.tar', '.gz', '.woff', '.woff2', '.ttf', '.eot',
+]);
 
 // ── GitHub API helpers ────────────────────────────────────────────────────────
 
@@ -102,12 +133,19 @@ async function fetchSkillFiles(skillName) {
     .map(item => item.path);
 }
 
-// Download a single file from the repo
+// Download a single file from the repo (binary-safe for images, fonts, etc.)
 async function downloadFile(repoPath, destPath) {
   const url = `${RAW_BASE}/${repoPath}`;
-  const content = await get(url);
+  const ext = path.extname(repoPath).toLowerCase();
   fs.mkdirSync(path.dirname(destPath), { recursive: true });
-  fs.writeFileSync(destPath, content, 'utf8');
+
+  if (BINARY_EXTENSIONS.has(ext)) {
+    const buffer = await getBuffer(url);
+    fs.writeFileSync(destPath, buffer);
+  } else {
+    const content = await get(url);
+    fs.writeFileSync(destPath, content, 'utf8');
+  }
 }
 
 // Get skill metadata from SKILL.md frontmatter
