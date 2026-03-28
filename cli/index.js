@@ -153,11 +153,28 @@ async function fetchSkillMeta(skillName) {
   try {
     const url = `${RAW_BASE}/${SKILLS_PATH}/${skillName}/SKILL.md`;
     const content = await get(url);
-    const version = (content.match(/^version:\s*(.+)$/m) || [])[1]?.trim() || '1.0';
-    const descMatch = content.match(/^description:\s*[>|]?\s*\n([\s\S]*?)(?=\n\w|\n---)/m);
-    const desc = descMatch
-      ? descMatch[1].replace(/\s+/g, ' ').trim().slice(0, 100) + '...'
-      : 'No description available';
+    const version = (content.match(/^version:\s*["']?(.+?)["']?\s*$/m) || [])[1]?.trim() || '1.0';
+
+    // Try quoted single-line description first (most common format)
+    let desc = '';
+    const quotedMatch = content.match(/^description:\s*["'](.+?)["']\s*$/m);
+    if (quotedMatch) {
+      desc = quotedMatch[1].trim();
+    } else {
+      // Try unquoted single-line description
+      const unquotedMatch = content.match(/^description:\s*([^>|"'\n].+)$/m);
+      if (unquotedMatch) {
+        desc = unquotedMatch[1].trim();
+      } else {
+        // Try multi-line folded/literal description
+        const multiMatch = content.match(/^description:\s*[>|]?\s*\n([\s\S]*?)(?=\n\w|\n---)/m);
+        if (multiMatch) {
+          desc = multiMatch[1].replace(/\s+/g, ' ').trim();
+        }
+      }
+    }
+
+    desc = desc ? desc.slice(0, 120) + (desc.length > 120 ? '...' : '') : 'No description available';
     return { version, desc };
   } catch {
     return { version: '1.0', desc: '' };
@@ -180,10 +197,14 @@ function getCursorPath(projectPath) {
 function buildMdcContent(skillMd, skillName) {
   // Strip frontmatter and rebuild as .mdc
   const withoutFrontmatter = skillMd.replace(/^---[\s\S]*?---\n/, '');
-  const descMatch = skillMd.match(/^description:\s*[>|]?\s*\n([\s\S]*?)(?=\n\w|\n---)/m);
-  const desc = descMatch
-    ? descMatch[1].replace(/\s+/g, ' ').trim()
-    : `La-Z-Boy ${skillName} skill`;
+  // Parse description from frontmatter (quoted, unquoted, or multi-line)
+  const quotedDesc = skillMd.match(/^description:\s*["'](.+?)["']\s*$/m);
+  const unquotedDesc = skillMd.match(/^description:\s*([^>|"'\n].+)$/m);
+  const multiDesc = skillMd.match(/^description:\s*[>|]?\s*\n([\s\S]*?)(?=\n\w|\n---)/m);
+  const desc = quotedDesc?.[1]?.trim()
+    || unquotedDesc?.[1]?.trim()
+    || multiDesc?.[1]?.replace(/\s+/g, ' ').trim()
+    || `La-Z-Boy ${skillName} skill`;
 
   return `---
 description: ${desc}
