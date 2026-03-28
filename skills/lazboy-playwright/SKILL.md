@@ -1,6 +1,9 @@
 ---
 name: lazboy-playwright
 description: "Write, run, and maintain Playwright end-to-end tests for La-Z-Boy web applications. Apply this skill whenever writing browser tests, UI automation, or web testing scripts for any La-Z-Boy site or app — even if the user doesn't say 'Playwright'. Trigger on: e2e test, end-to-end, browser test, UI test, Playwright, test automation, selenium replacement, click testing, form testing, checkout flow test, product page test, or any request to automate or verify web UI behavior for La-Z-Boy."
+version: "1.0.0"
+category: QA/Testing
+tags: [testing, qa, playwright, e2e, automation]
 ---
 
 # La-Z-Boy Playwright Skill

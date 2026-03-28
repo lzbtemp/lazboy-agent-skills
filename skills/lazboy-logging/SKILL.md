@@ -1,6 +1,9 @@
 ---
 name: lazboy-logging
 description: "La-Z-Boy application logging best practices — structured JSON logging, log levels, correlation IDs, security (no PII/secrets), Python logging setup, and observability patterns. Apply this skill whenever writing, reviewing, or debugging logging code for any La-Z-Boy service. Trigger on: logging, logger, log level, structured logs, JSON logs, correlation ID, request ID, tracing, observability, audit trail, log aggregation, python logging, loguru, structlog, or any request to add or improve application logging."
+version: "1.0.0"
+category: DevOps
+tags: [devops, logging, observability, monitoring, structured-logs]
 ---
 
 # La-Z-Boy Application Logging

@@ -1,6 +1,9 @@
 ---
 name: lazboy-skill-standard
 description: "The La-Z-Boy organization standard for creating, structuring, and maintaining agent skills. Use this skill whenever creating a new skill, reviewing an existing skill, onboarding a new skill author, or auditing the skill library for consistency — even if the user doesn't explicitly say 'skill'. Trigger on: create a skill, new skill, skill template, skill standard, how do I write a skill, skill review, update a skill, add to the skill library, or any time someone is building, improving, or evaluating agent capabilities for La-Z-Boy."
+version: "1.0.0"
+category: Meta
+tags: [meta, skill-authoring, standards, templates]
 ---
 
 # La-Z-Boy Agent Skill Standard

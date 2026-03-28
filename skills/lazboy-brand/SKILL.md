@@ -1,6 +1,9 @@
 ---
 name: lazboy-brand
 description: "Apply La-Z-Boy brand standards for any design, UI, document, or marketing output. Use this skill whenever creating or reviewing anything visual or written for La-Z-Boy — including agent-generated UIs, presentations, reports, emails, code with style notes, or any artifact that must match the official La-Z-Boy look and feel. Trigger on: La-Z-Boy style, brand guidelines, company colors, official font, logo usage, brand-compliant, on-brand, use our brand, or any request to create a file (docx, pptx, html, jsx, css) for La-Z-Boy internal or external use. Also trigger when generating React components, HTML pages, slide decks, or email templates for La-Z-Boy — even if the user doesn't explicitly mention brand guidelines."
+version: "1.0.0"
+category: Designer
+tags: [designer, brand, ui, design-system, style-guide]
 ---
 
 # La-Z-Boy Brand Skill

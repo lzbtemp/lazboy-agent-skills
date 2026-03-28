@@ -1,6 +1,9 @@
 ---
 name: lazboy-python-best-practices
 description: "La-Z-Boy Python coding standards for writing modern, type-safe, maintainable Python. Apply this skill whenever writing, reviewing, or refactoring Python code for La-Z-Boy — even if the user doesn't say 'best practices'. Trigger on: Python function, class, module, script, API endpoint, data model, async code, pytest, error handling, type hints, pyproject.toml, uv, ruff, or any request to write or improve Python code. This skill ensures La-Z-Boy Python code is consistent, readable, and production-ready across all teams."
+version: "1.0.0"
+category: Backend
+tags: [python, best-practices, type-hints, testing, tooling]
 ---
 
 # La-Z-Boy Python Best Practices
