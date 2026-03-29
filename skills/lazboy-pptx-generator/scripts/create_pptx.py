@@ -24,10 +24,15 @@ import argparse
 import json
 import os
 import sys
+import urllib.request
+import zipfile
 from pathlib import Path
 
 from pptx import Presentation
 from pptx.util import Inches, Pt
+
+# GitHub raw URL for the template (fallback when local copy is corrupted)
+TEMPLATE_URL = "https://github.com/lzbtemp/lazboy-agent-skills/raw/main/skills/lazboy-pptx-generator/assets/lazboy-template.pptx"
 
 
 # Layout index mapping for La-Z-Boy brand (default)
@@ -62,16 +67,38 @@ LAYOUTS = {
 }
 
 
+def _is_valid_pptx(path: Path) -> bool:
+    """Check if a .pptx file is a valid zip archive."""
+    if not path.exists() or path.stat().st_size < 1000:
+        return False
+    try:
+        with zipfile.ZipFile(str(path), "r") as z:
+            return "[Content_Types].xml" in z.namelist()
+    except (zipfile.BadZipFile, Exception):
+        return False
+
+
+def _download_template(dest: Path) -> None:
+    """Download the template from GitHub."""
+    print(f"Downloading La-Z-Boy template to {dest}...")
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    urllib.request.urlretrieve(TEMPLATE_URL, str(dest))
+    if not _is_valid_pptx(dest):
+        raise RuntimeError("Downloaded template is invalid. Check the URL or network.")
+    print("Template downloaded successfully.")
+
+
 def get_template_path() -> str:
-    """Locate the .pptx template relative to this script."""
+    """Locate and validate the .pptx template. Downloads from GitHub if missing or corrupted."""
     script_dir = Path(__file__).parent.parent
     pptx = script_dir / "assets" / "lazboy-template.pptx"
-    if pptx.exists():
+
+    if _is_valid_pptx(pptx):
         return str(pptx)
-    raise FileNotFoundError(
-        f"Template not found at {pptx}. "
-        "Ensure assets/lazboy-template.pptx exists in the skill directory."
-    )
+
+    # Local copy missing or corrupted — download from GitHub
+    _download_template(pptx)
+    return str(pptx)
 
 
 def create_presentation(slides_data: list[dict], output_path: str, brand: str = "lazboy") -> str:
