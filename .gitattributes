@@ -6,3 +6,7 @@
 *.ico binary
 *.svg text
 *.pdf binary
+*.pptx binary
+*.potx binary
+*.docx binary
+*.xlsx binary
