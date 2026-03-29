@@ -2,7 +2,7 @@
 name: lazboy-pptx-generator
 description: >
   Generate branded PowerPoint presentations using the official La-Z-Boy
-  corporate template (.potx). This skill teaches agents how to use python-pptx
+  corporate template (.pptx). This skill teaches agents how to use python-pptx
   to create on-brand slide decks with correct layouts, fonts, and colors.
   Use this skill whenever creating or generating PowerPoint files, slides,
   presentations, or decks for La-Z-Boy — even if the user doesn't explicitly
@@ -17,12 +17,12 @@ compatibility: "Requires python-pptx (pip install python-pptx)"
 
 # La-Z-Boy PowerPoint Generator
 
-Create on-brand PowerPoint presentations using the official La-Z-Boy corporate template. Every generated deck uses the `.potx` template's slide masters — never create slides from scratch.
+Create on-brand PowerPoint presentations using the official La-Z-Boy corporate template. Every generated deck uses the `.pptx` template's slide masters — never create slides from scratch.
 
 **Reference files:**
 - `references/slide-layouts.md` — read to understand all 37 available slide layouts
-- `assets/lazboy-template.potx` — the official corporate template (source of truth)
-- `scripts/create_pptx.py` — helper script that handles .potx conversion and slide creation
+- `assets/lazboy-template.pptx` — the official corporate template (source of truth)
+- `scripts/create_pptx.py` — helper script that loads the template and creates slides
 
 ---
 
@@ -100,30 +100,16 @@ create_presentation(slides, "q1_results.pptx")
 When you need more control, use python-pptx directly. **Always load from the template:**
 
 ```python
-import zipfile, tempfile, os
-from io import BytesIO
 from pptx import Presentation
 
-# Step 1: Convert .potx to .pptx (required — python-pptx doesn't read .potx)
-def load_template(potx_path):
-    tmp = tempfile.mktemp(suffix=".pptx")
-    with open(potx_path, "rb") as f:
-        data = f.read()
-    bio = BytesIO(data)
-    with zipfile.ZipFile(bio, "r") as zin:
-        with zipfile.ZipFile(tmp, "w") as zout:
-            for item in zin.infolist():
-                content = zin.read(item.filename)
-                if item.filename == "[Content_Types].xml":
-                    content = content.replace(
-                        b"presentationml.template.main+xml",
-                        b"presentationml.presentation.main+xml",
-                    )
-                zout.writestr(item, content)
-    return Presentation(tmp)
+# Load the branded template directly (.pptx — no conversion needed)
+prs = Presentation("assets/lazboy-template.pptx")
 
-# Step 2: Add slides using layout indices
-prs = load_template("assets/lazboy-template.potx")
+# Remove pre-existing sample slides
+while len(prs.slides) > 0:
+    rId = prs.slides._sldIdLst[0].get('{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id')
+    prs.part.drop_rel(rId)
+    prs.slides._sldIdLst.remove(prs.slides._sldIdLst[0])
 
 # Title slide (layout 0)
 slide = prs.slides.add_slide(prs.slide_layouts[0])
@@ -176,7 +162,7 @@ For image-heavy presentations, mix in layouts 11-13 between content slides.
 
 ## 5. What NOT to Do
 
-- Never use `Presentation()` (empty) — always load from the `.potx` template
+- Never use `Presentation()` (empty) — always load from the `.pptx` template
 - Never create slides from a blank layout when a purpose-built layout exists
 - Never override the template's fonts with arbitrary typefaces
 - Never hardcode colors — use the template's theme colors
@@ -192,6 +178,6 @@ For image-heavy presentations, mix in layouts 11-13 between content slides.
 | Resource | Path | When to Use |
 |----------|------|-------------|
 | Slide layouts reference | `references/slide-layouts.md` | Look up placeholder indices for any layout |
-| Corporate template | `assets/lazboy-template.potx` | Source template for all presentations |
+| Corporate template | `assets/lazboy-template.pptx` | Source template for all presentations |
 | Helper script | `scripts/create_pptx.py` | Generate decks from structured JSON input |
 | Brand guidelines | https://brandguidelines.la-z-boy.com/ | Verify brand compliance |

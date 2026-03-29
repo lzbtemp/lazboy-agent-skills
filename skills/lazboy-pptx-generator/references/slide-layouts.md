@@ -1,6 +1,6 @@
 # La-Z-Boy PowerPoint Template — Slide Layouts
 
-Template: `assets/lazboy-template.potx`
+Template: `assets/lazboy-template.pptx`
 Dimensions: 13.3" x 7.5" (Widescreen 16:9)
 Slide Master: 1 master, 37 layouts
 
