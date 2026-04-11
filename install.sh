@@ -33,10 +33,13 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 RESET='\033[0m'
 
+VERBOSE=false
+
 info()    { echo -e "${BLUE}ℹ${RESET}  $1"; }
 success() { echo -e "${GREEN}✅${RESET} $1"; }
 warn()    { echo -e "${YELLOW}⚠️ ${RESET} $1"; }
 error()   { echo -e "${RED}❌${RESET} $1"; exit 1; }
+debug()   { $VERBOSE && echo -e "${BLUE}[debug]${RESET} $1" || true; }
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 list_skills() {
@@ -70,8 +73,11 @@ install_for_claude() {
     local dest="$project_path/.claude/skills/$skill_name"
   fi
 
+  debug "Source: $skill_src"
+  debug "Destination: $dest"
   mkdir -p "$dest"
   cp -r "$skill_src"/. "$dest/"
+  debug "Copied $(find "$dest" -type f | wc -l | tr -d ' ') file(s)"
   success "Claude Code: '$skill_name' installed → $dest"
 
   if [ "$scope" = "project" ]; then
@@ -99,6 +105,7 @@ install_for_cursor() {
   desc=$(grep -A5 '^description:' "$skill_src/SKILL.md" | grep -v '^description:' | grep -v '^---' | \
          sed 's/^[[:space:]]*//' | tr '\n' ' ' | cut -c1-200)
 
+  debug "Building .mdc file: $mdc_file"
   cat > "$mdc_file" << EOF
 ---
 description: ${desc}
@@ -136,6 +143,7 @@ while [[ $# -gt 0 ]]; do
     --global)     SCOPE="global" ;;
     --project)    SCOPE="project"; PROJECT_PATH="$2"; shift ;;
     --cursor)     DO_CURSOR=true ;;
+    --verbose)    VERBOSE=true ;;
     --tool)       TOOL="$2"; shift ;;
     -*)           error "Unknown option: $1" ;;
     *)            SKILL_NAME="$1" ;;

@@ -100,6 +100,30 @@ Full guide: [`docs/contributing.md`](./docs/contributing.md)
 
 ---
 
+## Logging & Debugging
+
+All scripts and tools support verbose/debug output for troubleshooting:
+
+| Tool | How to enable | What it shows |
+|------|--------------|---------------|
+| **NPM CLI** | `--verbose` flag or `DEBUG=1` | HTTP requests, response times, file counts |
+| **Bash installer** | `--verbose` flag | Source/dest paths, file counts per skill |
+| **Python scripts** | `DEBUG=1` env var | File scan progress, timing, error details |
+
+Examples:
+```bash
+# Debug CLI
+npx @lazboy/skills add lazboy-brand --verbose
+
+# Debug installer
+./install.sh lazboy-brand --global --verbose
+
+# Debug Python validator
+DEBUG=1 python scripts/validate_brand.py src/
+```
+
+---
+
 ## Install Paths Reference
 
 | Tool | Scope | Path |

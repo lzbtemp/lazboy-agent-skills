@@ -39,6 +39,9 @@ const c = {
   cyan:   '\x1b[36m',
 };
 
+// Verbose mode: --verbose flag or DEBUG=1 env var
+const VERBOSE = process.env.DEBUG === '1' || process.argv.includes('--verbose');
+
 const log = {
   info:    (msg) => console.log(`${c.blue}ℹ${c.reset}  ${msg}`),
   success: (msg) => console.log(`${c.green}✅${c.reset} ${msg}`),
@@ -46,6 +49,7 @@ const log = {
   error:   (msg) => console.error(`${c.red}❌${c.reset} ${msg}`),
   step:    (msg) => console.log(`${c.dim}   ${msg}${c.reset}`),
   title:   (msg) => console.log(`\n${c.bold}${c.blue}${msg}${c.reset}`),
+  debug:   (msg) => { if (VERBOSE) console.log(`${c.dim}[debug] ${msg}${c.reset}`); },
 };
 
 // ── HTTP helpers ──────────────────────────────────────────────────────────────
@@ -66,6 +70,8 @@ function buildOptions() {
 
 // GET as UTF-8 string (for text files, JSON APIs)
 function get(url) {
+  const start = Date.now();
+  log.debug(`GET ${url}`);
   return new Promise((resolve, reject) => {
     https.get(url, buildOptions(), (res) => {
       if (res.statusCode === 301 || res.statusCode === 302) {
@@ -79,7 +85,10 @@ function get(url) {
       }
       let data = '';
       res.on('data', chunk => data += chunk);
-      res.on('end', () => resolve(data));
+      res.on('end', () => {
+        log.debug(`200 OK ${data.length} bytes (${Date.now() - start}ms)`);
+        resolve(data);
+      });
       res.on('error', reject);
     }).on('error', reject);
   });
@@ -118,14 +127,17 @@ const BINARY_EXTENSIONS = new Set([
 async function fetchSkillList() {
   const url = `${API_BASE}/contents/${SKILLS_PATH}?ref=${GITHUB_BRANCH}`;
   const data = JSON.parse(await get(url));
-  return data
+  const dirs = data
     .filter(item => item.type === 'dir')
     .map(item => item.name);
+  log.debug(`Found ${dirs.length} skill(s): ${dirs.join(', ')}`);
+  return dirs;
 }
 
 // Get all files in a skill folder (recursively)
 async function fetchSkillFiles(skillName) {
   const url = `${API_BASE}/git/trees/${GITHUB_BRANCH}?recursive=1`;
+  log.debug(`Fetching repo tree for skill: ${skillName}`);
   const data = JSON.parse(await get(url));
   const prefix = `${SKILLS_PATH}/${skillName}/`;
   return data.tree
@@ -135,6 +147,7 @@ async function fetchSkillFiles(skillName) {
 
 // Download a single file from the repo (binary-safe for images, fonts, etc.)
 async function downloadFile(repoPath, destPath) {
+  log.debug(`Downloading: ${repoPath} → ${destPath}`);
   const url = `${RAW_BASE}/${repoPath}`;
   const ext = path.extname(repoPath).toLowerCase();
   fs.mkdirSync(path.dirname(destPath), { recursive: true });
@@ -392,6 +405,7 @@ ${c.bold}Options:${c.reset}
   ${c.yellow}--cursor${c.reset}                     Also install as a Cursor rule (.mdc)
   ${c.yellow}--both${c.reset}                       Install for both Claude Code and Cursor
   ${c.yellow}--project${c.reset} <path>             Target a specific project path
+  ${c.yellow}--verbose${c.reset}                    Show debug output (HTTP requests, timings)
 
 ${c.bold}Examples:${c.reset}
   npx @lazboy/skills list
@@ -417,7 +431,7 @@ async function main() {
   const args     = process.argv.slice(2);
   const command  = args[0];
   const skillName = args[1] && !args[1].startsWith('--') ? args[1] : null;
-  const flags    = args.filter(a => a.startsWith('--') || (args.indexOf(a) > 1));
+  const flags    = args.filter(a => (a.startsWith('--') && a !== '--verbose') || (args.indexOf(a) > 1));
 
   switch (command) {
     case 'list':

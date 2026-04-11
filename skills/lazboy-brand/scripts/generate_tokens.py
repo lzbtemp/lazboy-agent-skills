@@ -18,6 +18,15 @@ Output files (when using 'all'):
 
 import sys
 import json
+import os
+import logging
+
+logging.basicConfig(
+    level=logging.DEBUG if os.environ.get("DEBUG") else logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%Y-%m-%dT%H:%M:%S",
+)
+log = logging.getLogger("generate_tokens")
 
 # ── Token definitions ────────────────────────────────────────────────────────
 TOKENS = {
@@ -140,18 +149,24 @@ if __name__ == "__main__":
         print(to_tailwind())
 
     elif fmt == "all":
+        log.info("Generating all token formats")
         with open("brand-tokens.css", "w") as f:
             f.write(to_css())
+        log.info("Written: brand-tokens.css")
         print("✅ Written: brand-tokens.css")
 
         with open("brand-tokens.json", "w") as f:
             f.write(to_json())
+        log.info("Written: brand-tokens.json")
         print("✅ Written: brand-tokens.json")
 
         with open("brand-tokens.tailwind.js", "w") as f:
             f.write(to_tailwind())
+        log.info("Written: brand-tokens.tailwind.js")
         print("✅ Written: brand-tokens.tailwind.js")
 
+        log.info("All token files generated successfully")
     else:
+        log.error("Unknown format: %s", fmt)
         print(__doc__)
         sys.exit(1)

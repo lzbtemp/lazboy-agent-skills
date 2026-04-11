@@ -17,6 +17,15 @@ Output:
 import sys
 import os
 import re
+import logging
+import time
+
+logging.basicConfig(
+    level=logging.DEBUG if os.environ.get("DEBUG") else logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%Y-%m-%dT%H:%M:%S",
+)
+log = logging.getLogger("validate_brand")
 
 # ── Brand-approved colors ────────────────────────────────────────────────────
 APPROVED_COLORS = {
@@ -79,11 +88,13 @@ def extract_font_families(text):
 def scan_file(filepath):
     """Scan a single file and return violations."""
     violations = []
+    log.debug("Scanning file: %s", filepath)
 
     try:
         with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
             lines = f.readlines()
     except Exception as e:
+        log.error("Could not read file %s: %s", filepath, e)
         return [{"line": 0, "type": "error", "message": f"Could not read file: {e}"}]
 
     for i, line in enumerate(lines, 1):
@@ -130,11 +141,13 @@ def scan_file(filepath):
 def scan_path(path):
     """Scan a file or directory recursively."""
     results = {}
+    start = time.time()
 
     if os.path.isfile(path):
         if path.endswith(('.css', '.scss', '.html', '.htm', '.jsx', '.tsx')):
             results[path] = scan_file(path)
     elif os.path.isdir(path):
+        log.info("Scanning directory: %s", path)
         for root, dirs, files in os.walk(path):
             # Skip node_modules and build dirs
             dirs[:] = [d for d in dirs if d not in ('node_modules', 'dist', 'build', '.git')]
@@ -143,9 +156,12 @@ def scan_path(path):
                     filepath = os.path.join(root, filename)
                     results[filepath] = scan_file(filepath)
     else:
+        log.error("Not a file or directory: %s", path)
         print(f"Error: {path} is not a file or directory")
         sys.exit(1)
 
+    elapsed = round((time.time() - start) * 1000)
+    log.info("Scan complete: %d file(s) in %dms", len(results), elapsed)
     return results
 
 def print_report(results):
