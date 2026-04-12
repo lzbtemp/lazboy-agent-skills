@@ -20,7 +20,7 @@ Every skill must follow the standard before it can be merged. The standard cover
 
 ### 1. Clone the repo
 ```bash
-git clone https://github.com/lazboy/lazboy-agent-skills.git
+git clone https://github.com/LZBRetail/lazboy-agent-skills.git
 cd lazboy-agent-skills
 ```
 

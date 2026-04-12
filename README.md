@@ -20,7 +20,7 @@ A skill is a structured knowledge file that tells an AI agent how to handle a sp
 
 ### One-time setup
 ```bash
-git clone https://github.com/lazboy/lazboy-agent-skills.git
+git clone https://github.com/LZBRetail/lazboy-agent-skills.git
 cd lazboy-agent-skills
 ```
 
