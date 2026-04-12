@@ -29,7 +29,7 @@ npx @lazboy/skills remove lazboy-brand
 
 ## What it does
 
-- Connects to the `LZBRetail/lazboy-agent-skills` GitHub repo
+- Connects to the `lzbtemp/lazboy-agent-skills` GitHub repo
 - Downloads **only** the skill folder you asked for
 - Places it in `.claude/skills/<skill-name>/` for Claude Code
 - Optionally generates a `.cursor/rules/<skill-name>.mdc` for Cursor

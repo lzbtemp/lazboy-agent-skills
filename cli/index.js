@@ -17,7 +17,7 @@ const path   = require('path');
 const os     = require('os');
 
 // ── Config ────────────────────────────────────────────────────────────────────
-const GITHUB_ORG    = 'LZBRetail';
+const GITHUB_ORG    = 'lzbtemp';
 const GITHUB_REPO   = 'lazboy-agent-skills';
 const GITHUB_BRANCH = 'main';
 const SKILLS_PATH   = 'skills'; // folder inside the repo where skills live

@@ -32,7 +32,7 @@ from pptx import Presentation
 from pptx.util import Inches, Pt
 
 # GitHub raw URL for the template (fallback when local copy is corrupted)
-TEMPLATE_URL = "https://github.com/LZBRetail/lazboy-agent-skills/raw/main/skills/lazboy-pptx-generator/assets/lazboy-template.pptx"
+TEMPLATE_URL = "https://github.com/lzbtemp/lazboy-agent-skills/raw/main/skills/lazboy-pptx-generator/assets/lazboy-template.pptx"
 
 
 # Layout index mapping for La-Z-Boy brand (default)

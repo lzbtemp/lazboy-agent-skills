@@ -19,7 +19,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/LZBRetail/lazboy-agent-skills.git",
+    "url": "https://github.com/lzbtemp/lazboy-agent-skills.git",
     "directory": "cli"
   },
   "dependencies": {
